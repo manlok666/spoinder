@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Spoinder · Swipe</title>
+    <link rel="stylesheet" href="./styles/swipe.css"/>
+</head>
+<body>
+<div class="bg-gradient"></div>
+<main class="app-shell">
+    <header class="topbar">
+        <div class="brand">
+            <span class="flame">🔥</span>
+            <span class="brand-text">Spoinder</span>
+        </div>
+        <a class="ghost-btn" href="./index.html">返回</a>
+    </header>
+
+    <section class="card swipe-stage">
+        <div id="cardStack" class="card-stack">
+            <div id="swipeCard" class="swipe-card hidden">
+                <img id="trackCover" class="cover" alt="封面"/>
+                <div class="swipe-info">
+                    <h2 id="trackTitle"></h2>
+                    <p id="trackArtist" class="muted"></p>
+                </div>
+            </div>
+            <div id="emptyState" class="empty-state hidden">没有更多歌曲了 🎧</div>
+        </div>
+
+        <div class="actions">
+            <button id="dislikeBtn" class="ghost-btn">左滑</button>
+            <button id="likeBtn" class="primary-btn">右滑</button>
+        </div>
+
+        <div class="meta">
+            <span id="remainingTxt" class="pill pill-muted">剩余 0</span>
+            <span id="likedTxt" class="pill pill-green">已喜欢 0</span>
+        </div>
+    </section>
+</main>
+
+<script src="./scripts/swipe.js"></script>
+</body>
+</html>
+

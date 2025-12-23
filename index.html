@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spoinder</title>
+  <link rel="stylesheet" href="./styles/style.css" />
+</head>
+<body>
+  <div class="bg-gradient"></div>
+
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="flame">🔥</span>
+        <span class="brand-text">Spoinder</span>
+      </div>
+      <button id="logoutBtn" class="ghost-btn" aria-label="登出">登出</button>
+    </header>
+
+    <!-- 登录卡片 -->
+    <section id="loginCard" class="card">
+      <button id="loginBtn" class="primary-btn">start</button>
+    </section>
+
+    <!-- 播放列表卡片 -->
+    <section id="playlistCard" class="card hidden">
+      <div class="card-head">
+        <div>
+          <h1>歌单列表</h1>
+          <p class="muted">请选择进行随机的歌单</p>
+        </div>
+      </div>
+      <ul id="playlistList" class="playlist-list"></ul>
+    </section>
+  </main>
+
+  <footer id="selectionBar" class="selection-bar hidden">
+    <span id="selectedCount">已选 0 个歌单</span>
+    <button id="submitSelectionBtn" class="primary-btn" disabled>提交选择</button>
+  </footer>
+
+  <!-- 生成歌单数量弹窗 -->
+  <div id="generateModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content card">
+      <h2>输入需要生成的歌曲数</h2>
+        <label for="generateInput"></label>
+        <input id="generateInput" type="number" min="1" placeholder="例如：20" />
+      <div class="modal-actions">
+        <button id="cancelGenerateBtn" class="ghost-btn">取消</button>
+        <button id="confirmGenerateBtn" class="primary-btn">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./scripts/app.js"></script>
+</body>
+</html>
+
