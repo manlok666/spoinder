@@ -56,7 +56,7 @@ const isTokenValid = (req) => {
 };
 
 app.get('/login', (req, res) => {
-    const scope = 'playlist-read-private playlist-read-collaborative playlist-modify-public';
+    const scope = 'playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private';
     const params = querystring.stringify({
         response_type: 'code',
         client_id: clientId,
@@ -138,12 +138,31 @@ app.get('/playerList', async (req, res) => {
         auth = refreshed;
     }
     try {
-        const playlistsRes = await fetch('https://api.spotify.com/v1/me/playlists', {
-            headers: { Authorization: `Bearer ${auth.accessToken}` }
-        });
-        if (!playlistsRes.ok) return res.status(playlistsRes.status).send('获取列表失败');
-        const playlists = await playlistsRes.json();
-        return res.json({ items: playlists.items || [] });
+        let allPlaylists = [];
+        let url = 'https://api.spotify.com/v1/me/playlists?limit=50';
+
+        while (url) {
+            const playlistsRes = await fetch(url, {
+                headers: { Authorization: `Bearer ${auth.accessToken}` }
+            });
+
+            if (!playlistsRes.ok) {
+                // 如果是第一页就失败，直接返回错误
+                if (allPlaylists.length === 0) {
+                    return res.status(playlistsRes.status).send('获取列表失败');
+                }
+                // 如果中间页失败，返回已获取的部分
+                break;
+            }
+
+            const data = await playlistsRes.json();
+            if (data.items) {
+                allPlaylists = allPlaylists.concat(data.items);
+            }
+            url = data.next;
+        }
+
+        return res.json({ items: allPlaylists });
     } catch (err) {
         return res.status(500).send(err.message);
     }
@@ -233,7 +252,7 @@ app.post('/createPlaylist', async (req, res) => {
         // 简单处理，假设不超过100首，或者分批处理
         for (let i = 0; i < uris.length; i += 100) {
             const chunk = uris.slice(i, i + 100);
-            await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, {
+            const addRes = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${auth.accessToken}`,
@@ -241,9 +260,102 @@ app.post('/createPlaylist', async (req, res) => {
                 },
                 body: JSON.stringify({ uris: chunk })
             });
+            if (!addRes.ok) throw new Error('添加歌曲失败');
         }
 
         res.json({ success: true, playlistId: playlist.id });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send(err.message);
+    }
+});
+
+app.post('/shufflePlaylists', async (req, res) => {
+    let auth = getAuth(req);
+    if (!isCodeValid(req)) return res.status(401).send('未授权');
+    if (!isTokenValid(req)) {
+        const refreshed = await refreshAccessToken(req, res);
+        if (!refreshed) return res.status(401).send('未授权');
+        auth = refreshed;
+    }
+
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).send('没有选择歌单');
+    }
+
+    try {
+        for (const playlistId of ids) {
+            // 1. 获取歌单所有歌曲
+            const trackIds = await fetchAllTracksByPlaylist(playlistId, auth.accessToken);
+            if (trackIds.length === 0) continue;
+
+            // 2. 随机打乱 (尝试减少不动点，使结果与原顺序差异更大)
+            const originalIds = [...trackIds];
+            let attempts = 0;
+            // 只要有过多不动点且尝试次数未耗尽，就重试
+            while (attempts < 5) {
+                // Fisher-Yates Shuffle
+                for (let i = trackIds.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [trackIds[i], trackIds[j]] = [trackIds[j], trackIds[i]];
+                }
+
+                // 检查不动点数量
+                let fixedPoints = 0;
+                for (let k = 0; k < trackIds.length; k++) {
+                    if (trackIds[k] === originalIds[k]) fixedPoints++;
+                }
+
+                // 如果不动点很少（例如少于5%），则满意退出
+                if (fixedPoints <= Math.ceil(trackIds.length * 0.05)) break;
+                attempts++;
+            }
+            //打印最终不动点数量和新旧列表的长度
+            let finalFixedPoints = 0;
+            for (let k = 0; k < trackIds.length; k++) {
+                if (trackIds[k] === originalIds[k]) finalFixedPoints++;
+            }
+            console.log(`Playlist ${playlistId} shuffled with ${finalFixedPoints} fixed points after ${attempts} attempts.`);
+            console.log(`Original length: ${originalIds.length}, Shuffled length: ${trackIds.length}`);
+
+            // 3. 替换歌单内容 (Spotify Replace Playlist Items API)
+            // 注意：一次最多替换100首，如果超过100首，需要先替换前100首，再添加剩下的
+            const uris = trackIds.map(id => `spotify:track:${id}`);
+
+            // 第一步：用前100首覆盖原歌单
+            const firstChunk = uris.slice(0, 100);
+            const replaceRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${auth.accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ uris: firstChunk })
+            });
+
+            if (!replaceRes.ok) {
+                throw new Error(`Replace tracks failed: ${replaceRes.status}`);
+            }
+
+            // 第二步：追加剩余的歌曲
+            for (let i = 100; i < uris.length; i += 100) {
+                const chunk = uris.slice(i, i + 100);
+                const appendRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${auth.accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ uris: chunk })
+                });
+
+                if (!appendRes.ok) {
+                    throw new Error(`Append tracks failed: ${appendRes.status}`);
+                }
+            }
+        }
+        res.json({ success: true });
     } catch (err) {
         console.error(err);
         res.status(500).send(err.message);
@@ -278,6 +390,12 @@ app.post('/logout', (req, res) => {
 });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.use('/', express.static(__dirname));
+
+// 配置静态文件服务
+// 将 pages 文件夹作为根目录服务 html 文件
+app.use(express.static(path.join(__dirname, 'pages')));
+// 显式服务样式和脚本文件夹
+app.use('/styles', express.static(path.join(__dirname, 'styles')));
+app.use('/scripts', express.static(path.join(__dirname, 'scripts')));
 
 app.listen(port, () => console.log(`Server on http://localhost:${port}`));

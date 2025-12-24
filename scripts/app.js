@@ -1,4 +1,8 @@
 const loginCard = document.getElementById("loginCard");
+const menuCard = document.getElementById("menuCard");
+const spoinderFeatureBtn = document.getElementById("spoinderFeatureBtn");
+const shuffleFeatureBtn = document.getElementById("shuffleFeatureBtn");
+const backToMenuBtn = document.getElementById("backToMenuBtn");
 const playlistCard = document.getElementById("playlistCard");
 const playlistList = document.getElementById("playlistList");
 const loginBtn = document.getElementById("loginBtn");
@@ -13,7 +17,8 @@ const confirmGenerateBtn = document.getElementById("confirmGenerateBtn");
 
 const selectedPlaylistIds = new Set();
 let cachedTrackIds = [];
-
+let cachedPlaylists = []; // 缓存获取到的歌单数据
+let currentMode = null; // 'spoinder' | 'shuffle'
 
 const renderPlaylists = (items) => {
     playlistList.innerHTML = "";
@@ -39,18 +44,35 @@ const renderPlaylists = (items) => {
 const showLogin = () => {
     loginCard.classList.remove("hidden");
     loginCard.style.display = "flex";
+    menuCard.classList.add("hidden");
+    menuCard.style.display = "none";
     playlistCard.classList.add("hidden");
     selectionBar.classList.add("hidden");
     selectionBar.style.display = "none";
+    backToMenuBtn.classList.add("hidden");
+}
+
+const showMenu = () => {
+    loginCard.classList.add("hidden");
+    loginCard.style.display = "none";
+    playlistCard.classList.add("hidden");
+    selectionBar.classList.add("hidden");
+    selectionBar.style.display = "none";
+    menuCard.classList.remove("hidden");
+    menuCard.style.display = "flex";
+    backToMenuBtn.classList.add("hidden");
 }
 
 const showPlaylist = (items) => {
     renderPlaylists(items);
     loginCard.classList.add("hidden");
     loginCard.style.display = "none";
+    menuCard.classList.add("hidden");
+    menuCard.style.display = "none";
     playlistCard.classList.remove("hidden");
     selectionBar.classList.remove("hidden");
     selectionBar.style.display = "flex";
+    backToMenuBtn.classList.remove("hidden");
 }
 
 const attachCardListeners = () => {
@@ -98,6 +120,33 @@ const fetchTracksByPlaylists = async (ids) => {
 
 const handleSubmitSelection = async () => {
     if (selectedPlaylistIds.size === 0) return;
+
+    if (currentMode === 'shuffle') {
+        submitSelectionBtn.disabled = true;
+        submitSelectionBtn.textContent = "正在洗牌...";
+        try {
+            const res = await fetch("/shufflePlaylists", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ids: [...selectedPlaylistIds] })
+            });
+            if (res.ok) {
+                window.location.href = "./success.html?type=shuffle";
+            } else {
+                alert("洗牌失败，请重试");
+                submitSelectionBtn.disabled = false;
+                submitSelectionBtn.textContent = "提交选择";
+            }
+        } catch (e) {
+            console.error(e);
+            alert("洗牌失败，请重试");
+            submitSelectionBtn.disabled = false;
+            submitSelectionBtn.textContent = "提交选择";
+        }
+        return;
+    }
+
+    // Spoinder mode logic
     submitSelectionBtn.disabled = true;
     submitSelectionBtn.textContent = "处理中...";
     const trackIds = await fetchTracksByPlaylists([...selectedPlaylistIds]);
@@ -151,7 +200,10 @@ const fetchAuthState = async () => {
 
 const handleLogin = async () => {
     const items = await fetchPlaylists();
-    if (items) showPlaylist(items);
+    if (items) {
+        cachedPlaylists = items;
+        showMenu();
+    }
 };
 
 const handleLogout = async () => {
@@ -159,11 +211,26 @@ const handleLogout = async () => {
     playlistList.innerHTML = "";
     loginBtn.classList.remove("hidden");
     selectionBar.classList.add("hidden");
+    menuCard.classList.add("hidden");
+    backToMenuBtn.classList.add("hidden");
     showLogin();
 };
 
 // 绑定事件
 loginBtn.addEventListener("click", handleLogin);
+spoinderFeatureBtn.addEventListener("click", () => {
+    currentMode = 'spoinder';
+    if (cachedPlaylists) {
+        showPlaylist(cachedPlaylists);
+    }
+});
+shuffleFeatureBtn.addEventListener("click", () => {
+    currentMode = 'shuffle';
+    if (cachedPlaylists) {
+        showPlaylist(cachedPlaylists);
+    }
+});
+backToMenuBtn.addEventListener("click", showMenu);
 logoutBtn.addEventListener("click", handleLogout);
 submitSelectionBtn.addEventListener("click", handleSubmitSelection);
 cancelGenerateBtn.addEventListener("click", closeGenerateModal);
@@ -180,7 +247,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     const items = await fetchPlaylists();
     if (items) {
-        showPlaylist(items);
+        cachedPlaylists = items;
+        showMenu();
     } else {
         showLogin();
     }
