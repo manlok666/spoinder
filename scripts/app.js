@@ -14,11 +14,32 @@ const generateModal = document.getElementById("generateModal");
 const generateInput = document.getElementById("generateInput");
 const cancelGenerateBtn = document.getElementById("cancelGenerateBtn");
 const confirmGenerateBtn = document.getElementById("confirmGenerateBtn");
+const pageLoader = document.getElementById("pageLoader");
 
 const selectedPlaylistIds = new Set();
 let cachedTrackIds = [];
 let cachedPlaylists = []; // 缓存获取到的歌单数据
 let currentMode = null; // 'spoinder' | 'shuffle'
+
+// 工具函数：切换按钮加载状态
+const setBtnLoading = (btn, isLoading, text = "") => {
+    if (isLoading) {
+        btn.classList.add("btn-loading");
+        if (text) btn.dataset.originalText = btn.textContent;
+    } else {
+        btn.classList.remove("btn-loading");
+        if (text && btn.dataset.originalText) btn.textContent = btn.dataset.originalText;
+    }
+};
+
+// 工具函数：切换全屏加载
+const setPageLoading = (isLoading) => {
+    if (isLoading) {
+        pageLoader.classList.add("active");
+    } else {
+        pageLoader.classList.remove("active");
+    }
+};
 
 const renderPlaylists = (items) => {
     playlistList.innerHTML = "";
@@ -122,8 +143,9 @@ const handleSubmitSelection = async () => {
     if (selectedPlaylistIds.size === 0) return;
 
     if (currentMode === 'shuffle') {
-        submitSelectionBtn.disabled = true;
-        submitSelectionBtn.textContent = "正在洗牌...";
+        setBtnLoading(submitSelectionBtn, true);
+        setPageLoading(true); // 洗牌可能较慢，使用全屏遮罩
+
         try {
             const res = await fetch("/shufflePlaylists", {
                 method: "POST",
@@ -134,26 +156,30 @@ const handleSubmitSelection = async () => {
                 window.location.href = "./success.html?type=shuffle";
             } else {
                 alert("洗牌失败，请重试");
-                submitSelectionBtn.disabled = false;
-                submitSelectionBtn.textContent = "提交选择";
+                setBtnLoading(submitSelectionBtn, false);
+                setPageLoading(false);
             }
         } catch (e) {
             console.error(e);
             alert("洗牌失败，请重试");
-            submitSelectionBtn.disabled = false;
-            submitSelectionBtn.textContent = "提交选择";
+            setBtnLoading(submitSelectionBtn, false);
+            setPageLoading(false);
         }
         return;
     }
 
     // Spoinder mode logic
-    submitSelectionBtn.disabled = true;
-    submitSelectionBtn.textContent = "处理中...";
-    const trackIds = await fetchTracksByPlaylists([...selectedPlaylistIds]);
-    cachedTrackIds = [...new Set(trackIds)];
-    submitSelectionBtn.textContent = "提交选择";
-    submitSelectionBtn.disabled = selectedPlaylistIds.size === 0;
-    openGenerateModal();
+    setBtnLoading(submitSelectionBtn, true);
+    try {
+        const trackIds = await fetchTracksByPlaylists([...selectedPlaylistIds]);
+        cachedTrackIds = [...new Set(trackIds)];
+        openGenerateModal();
+    } catch (e) {
+        console.error(e);
+        alert("获取歌曲失败");
+    } finally {
+        setBtnLoading(submitSelectionBtn, false);
+    }
 };
 
 const handleGenerateConfirm = () => {
@@ -162,10 +188,17 @@ const handleGenerateConfirm = () => {
         alert("请输入有效的数量，且不能超过可选歌曲总数");
         return;
     }
-    sessionStorage.setItem("swipeTrackIds", JSON.stringify(cachedTrackIds));
-    sessionStorage.setItem("swipeLimit", String(num));
-    closeGenerateModal();
-    window.location.href = "./swipe.html";
+
+    setBtnLoading(confirmGenerateBtn, true);
+
+    // 模拟一点延迟让动画显示，提升感知流畅度
+    setTimeout(() => {
+        sessionStorage.setItem("swipeTrackIds", JSON.stringify(cachedTrackIds));
+        sessionStorage.setItem("swipeLimit", String(num));
+        closeGenerateModal();
+        window.location.href = "./swipe.html";
+        setBtnLoading(confirmGenerateBtn, false);
+    }, 300);
 };
 
 const fetchPlaylists = async () => {
@@ -199,21 +232,31 @@ const fetchAuthState = async () => {
 };
 
 const handleLogin = async () => {
-    const items = await fetchPlaylists();
-    if (items) {
-        cachedPlaylists = items;
-        showMenu();
+    setBtnLoading(loginBtn, true);
+    try {
+        const items = await fetchPlaylists();
+        if (items) {
+            cachedPlaylists = items;
+            showMenu();
+        }
+    } finally {
+        setBtnLoading(loginBtn, false);
     }
 };
 
 const handleLogout = async () => {
-    await fetch("/logout", {method: "POST"});
-    playlistList.innerHTML = "";
-    loginBtn.classList.remove("hidden");
-    selectionBar.classList.add("hidden");
-    menuCard.classList.add("hidden");
-    backToMenuBtn.classList.add("hidden");
-    showLogin();
+    setBtnLoading(logoutBtn, true);
+    try {
+        await fetch("/logout", {method: "POST"});
+        playlistList.innerHTML = "";
+        loginBtn.classList.remove("hidden");
+        selectionBar.classList.add("hidden");
+        menuCard.classList.add("hidden");
+        backToMenuBtn.classList.add("hidden");
+        showLogin();
+    } finally {
+        setBtnLoading(logoutBtn, false);
+    }
 };
 
 // 绑定事件

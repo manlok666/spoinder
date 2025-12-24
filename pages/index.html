@@ -22,7 +22,7 @@
     </header>
 
     <!-- 登录卡片 -->
-    <section id="loginCard" class="card">
+    <section id="loginCard" class="card hidden" style="display: none;">
       <button id="loginBtn" class="primary-btn">start</button>
     </section>
 
@@ -45,7 +45,7 @@
     </section>
   </main>
 
-  <footer id="selectionBar" class="selection-bar hidden">
+  <footer id="selectionBar" class="selection-bar hidden" style="display: none;">
     <span id="selectedCount">已选 0 个歌单</span>
     <button id="submitSelectionBtn" class="primary-btn" disabled>提交选择</button>
   </footer>
@@ -60,6 +60,14 @@
         <button id="cancelGenerateBtn" class="ghost-btn">取消</button>
         <button id="confirmGenerateBtn" class="primary-btn">确认</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 全局加载遮罩 -->
+  <div id="pageLoader" class="page-loader">
+    <div class="loader-content">
+      <div class="loader-spinner"></div>
+      <p class="muted">正在处理...</p>
     </div>
   </div>
 
