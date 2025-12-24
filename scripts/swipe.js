@@ -7,6 +7,7 @@ const remainingTxt = document.getElementById("remainingTxt");
 const likedTxt = document.getElementById("likedTxt");
 const likeBtn = document.getElementById("likeBtn");
 const dislikeBtn = document.getElementById("dislikeBtn");
+const undoBtn = document.getElementById("undoBtn");
 const actionsEl = document.querySelector(".actions");
 const metaEl = document.querySelector(".meta");
 
@@ -192,6 +193,7 @@ const handleUndo = async () => {
 const setupButtons = () => {
   likeBtn.addEventListener("click", () => applySwipe(true));
   dislikeBtn.addEventListener("click", () => applySwipe(false));
+  undoBtn.addEventListener("click", handleUndo);
 };
 
 const setupKeyboard = () => {
