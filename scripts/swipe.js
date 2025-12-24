@@ -127,6 +127,10 @@ const showEmpty = () => {
 const drawNext = async () => {
   if ((!pool.length && !nextTrackTask) || (limit && liked.length >= limit)) {
     showEmpty();
+
+    if (liked.length > 0 && !window.isCreatingPlaylist) {
+        handlePlaylistCreation();
+    }
     return;
   }
 
@@ -190,11 +194,21 @@ const setupButtons = () => {
   dislikeBtn.addEventListener("click", () => applySwipe(false));
 };
 
+const setupKeyboard = () => {
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") {
+      applySwipe(false);
+    } else if (e.key === "ArrowRight") {
+      applySwipe(true);
+    }
+  });
+};
+
 const setupDrag = () => {
   let startX = 0;
   let dragging = false;
 
-  const onDown = (e) => {
+  const onTouchStart = (e) => {
     dragging = true;
     swipeCard.classList.add("grab", "swiping");
 
@@ -203,12 +217,12 @@ const setupDrag = () => {
     actionsEl.style.transition = "none";
     metaEl.style.transition = "none";
 
-    startX = e.clientX || e.touches?.[0]?.clientX || 0;
+    startX = e.touches[0].clientX;
   };
 
-  const onMove = (e) => {
+  const onTouchMove = (e) => {
     if (!dragging) return;
-    const x = e.clientX || e.touches?.[0]?.clientX || 0;
+    const x = e.touches[0].clientX;
     const delta = x - startX;
     const rotate = delta / 20;
 
@@ -222,7 +236,7 @@ const setupDrag = () => {
     metaEl.style.transform = transformVal;
   };
 
-  const onUp = (e) => {
+  const onTouchEnd = (e) => {
     if (!dragging) return;
     dragging = false;
     swipeCard.classList.remove("grab", "swiping");
@@ -232,7 +246,7 @@ const setupDrag = () => {
     actionsEl.style.transition = "";
     metaEl.style.transition = "";
 
-    const x = e.clientX || e.changedTouches?.[0]?.clientX || 0;
+    const x = e.changedTouches[0].clientX;
     const delta = x - startX;
     const threshold = 90;
     if (delta > threshold) {
@@ -244,12 +258,10 @@ const setupDrag = () => {
     }
   };
 
-  swipeCard.addEventListener("mousedown", onDown);
-  swipeCard.addEventListener("touchstart", onDown, { passive: true });
-  window.addEventListener("mousemove", onMove);
-  window.addEventListener("touchmove", onMove, { passive: true });
-  window.addEventListener("mouseup", onUp);
-  window.addEventListener("touchend", onUp);
+  // 仅保留触摸事件，移除鼠标事件以禁用电脑端拖拽
+  swipeCard.addEventListener("touchstart", onTouchStart, { passive: true });
+  window.addEventListener("touchmove", onTouchMove, { passive: true });
+  window.addEventListener("touchend", onTouchEnd);
 };
 
 const init = () => {
@@ -259,6 +271,7 @@ const init = () => {
   }
   setupButtons();
   setupDrag();
+  setupKeyboard();
   drawNext();
 };
 

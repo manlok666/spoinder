@@ -38,7 +38,7 @@
       <div class="card-head">
         <div>
           <h1>歌单列表</h1>
-          <p class="muted">请选择进行随机的歌单</p>
+          <p class="muted">请选择歌单</p>
         </div>
       </div>
       <ul id="playlistList" class="playlist-list"></ul>
@@ -47,7 +47,10 @@
 
   <footer id="selectionBar" class="selection-bar hidden" style="display: none;">
     <span id="selectedCount">已选 0 个歌单</span>
-    <button id="submitSelectionBtn" class="primary-btn" disabled>提交选择</button>
+    <div style="display: flex; gap: 12px;">
+      <button id="clearSelectionBtn" class="ghost-btn">取消选择</button>
+      <button id="submitSelectionBtn" class="primary-btn" disabled>提交选择</button>
+    </div>
   </footer>
 
   <!-- 生成歌单数量弹窗 -->
@@ -56,6 +59,15 @@
       <h2>输入需要生成的歌曲数</h2>
         <label for="generateInput"></label>
         <input id="generateInput" type="number" min="1" placeholder="例如：20" />
+
+        <!-- 移动端滚动选择器 -->
+        <div id="mobilePicker" class="mobile-picker">
+            <div class="picker-overlay"></div>
+            <div id="pickerViewport" class="picker-viewport">
+                <div id="pickerWheel" class="picker-wheel"></div>
+            </div>
+        </div>
+
       <div class="modal-actions">
         <button id="cancelGenerateBtn" class="ghost-btn">取消</button>
         <button id="confirmGenerateBtn" class="primary-btn">确认</button>

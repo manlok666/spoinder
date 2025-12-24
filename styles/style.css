@@ -301,34 +301,77 @@ input:focus {
     pointer-events: all;
 }
 
-.loader-content {
+/* 移动端滚动选择器样式 */
+.mobile-picker {
+    display: none; /* 默认隐藏 */
+    height: 200px;
+    position: relative;
+    overflow: hidden;
+    /* 上下渐变遮罩 */
+    mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+    margin-block: 12px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+}
+
+.picker-viewport {
+    height: 100%;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none; /* Firefox */
+}
+
+.picker-viewport::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.picker-wheel {
+    padding-top: 80px; /* (200 - 40) / 2 */
+    padding-bottom: 80px;
+}
+
+.picker-item {
+    height: 40px;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 16px;
+    justify-content: center;
+    scroll-snap-align: center;
+    color: var(--muted);
+    font-size: 16px;
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
-.loader-spinner {
-    width: 48px;
-    height: 48px;
-    border: 3px solid rgba(29, 185, 84, 0.2);
-    border-radius: 50%;
-    border-top-color: #1db954;
-    animation: spin 1s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
+.picker-item.active {
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 700;
 }
 
-@keyframes pop {
-    from {
-        transform: translateY(8px) scale(0.98);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
+.picker-overlay {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 40px;
+    transform: translateY(-50%);
+    border-top: 1px solid var(--glass-stroke);
+    border-bottom: 1px solid var(--glass-stroke);
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.05);
+    z-index: 1;
 }
 
 @media (max-width: 640px) {
+    /* 移动端隐藏普通输入框，显示滚动选择器 */
+    #generateInput {
+        display: none;
+    }
+    .mobile-picker {
+        display: block;
+    }
+
     .app-shell {
         padding-inline: 16px;
         padding-bottom: 140px;

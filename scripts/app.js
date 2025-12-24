@@ -9,12 +9,19 @@ const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const selectionBar = document.getElementById("selectionBar");
 const selectedCountEl = document.getElementById("selectedCount");
+const clearSelectionBtn = document.getElementById("clearSelectionBtn");
 const submitSelectionBtn = document.getElementById("submitSelectionBtn");
 const generateModal = document.getElementById("generateModal");
 const generateInput = document.getElementById("generateInput");
 const cancelGenerateBtn = document.getElementById("cancelGenerateBtn");
 const confirmGenerateBtn = document.getElementById("confirmGenerateBtn");
 const pageLoader = document.getElementById("pageLoader");
+
+// 移动端选择器元素
+const pickerViewport = document.getElementById("pickerViewport");
+const pickerWheel = document.getElementById("pickerWheel");
+let mobilePickerValue = 1;
+let lastActiveIndex = -1;
 
 const selectedPlaylistIds = new Set();
 let cachedTrackIds = [];
@@ -101,6 +108,16 @@ const attachCardListeners = () => {
         card.addEventListener("click", () => {
             const pid = card.dataset.id;
             if (!pid) return;
+
+            // Shuffle 模式下限制只能选择一个
+            if (currentMode === 'shuffle') {
+                if (!card.classList.contains("selected")) {
+                    // 如果点击的是未选中的卡片，先清除其他选中状态
+                    selectedPlaylistIds.clear();
+                    playlistList.querySelectorAll(".playlist-item.selected").forEach(c => c.classList.remove("selected"));
+                }
+            }
+
             const isSelected = card.classList.toggle("selected");
             if (isSelected) {
                 selectedPlaylistIds.add(pid);
@@ -116,16 +133,77 @@ const updateSelectionUI = () => {
     const count = selectedPlaylistIds.size;
     selectedCountEl.textContent = `已选 ${count} 个歌单`;
     submitSelectionBtn.disabled = count === 0;
+    clearSelectionBtn.disabled = count === 0; // 可选：如果没有选中项，禁用取消按钮
+};
+
+// 更新选择器高亮状态
+const updatePickerActiveState = (activeIndex) => {
+    if (lastActiveIndex === activeIndex) return;
+
+    const items = pickerWheel.children;
+    if (lastActiveIndex !== -1 && items[lastActiveIndex]) {
+        items[lastActiveIndex].classList.remove('active');
+    }
+
+    if (items[activeIndex]) {
+        items[activeIndex].classList.add('active');
+        lastActiveIndex = activeIndex;
+    }
 };
 
 const openGenerateModal = () => {
     generateModal.classList.remove("hidden");
-    generateInput.value = "";
-    generateInput.focus();
+
+    const maxCount = cachedTrackIds.length;
+
+    // 电脑端设置
+    generateInput.max = maxCount;
+    generateInput.value = Math.min(20, maxCount);
+
+    // 移动端初始化滚动选择器
+    if (window.innerWidth <= 640) {
+        pickerWheel.innerHTML = "";
+        const fragment = document.createDocumentFragment();
+
+        // 生成 1 到 maxCount 的选项
+        for (let i = 1; i <= maxCount; i++) {
+            const div = document.createElement("div");
+            div.className = "picker-item";
+            div.textContent = i;
+            fragment.appendChild(div);
+        }
+        pickerWheel.appendChild(fragment);
+
+        // 重置状态
+        pickerViewport.scrollTop = 0;
+        mobilePickerValue = 1;
+        lastActiveIndex = -1;
+        updatePickerActiveState(0);
+
+        // 绑定滚动事件
+        let isScrolling = false;
+        pickerViewport.onscroll = () => {
+            if (!isScrolling) {
+                window.requestAnimationFrame(() => {
+                    const index = Math.round(pickerViewport.scrollTop / 40);
+                    // 限制索引范围
+                    const safeIndex = Math.max(0, Math.min(index, maxCount - 1));
+                    updatePickerActiveState(safeIndex);
+                    mobilePickerValue = safeIndex + 1;
+                    isScrolling = false;
+                });
+                isScrolling = true;
+            }
+        };
+    } else {
+        generateInput.focus();
+    }
 };
 
 const closeGenerateModal = () => {
     generateModal.classList.add("hidden");
+    // 清理事件
+    if (pickerViewport) pickerViewport.onscroll = null;
 };
 
 const fetchTracksByPlaylists = async (ids) => {
@@ -183,7 +261,14 @@ const handleSubmitSelection = async () => {
 };
 
 const handleGenerateConfirm = () => {
-    const num = Number(generateInput.value);
+    let num;
+    // 根据设备宽度决定取值来源
+    if (window.innerWidth <= 640) {
+        num = mobilePickerValue;
+    } else {
+        num = Number(generateInput.value);
+    }
+
     if (!num || num <= 0 || cachedTrackIds.length < num ) {
         alert("请输入有效的数量，且不能超过可选歌曲总数");
         return;
@@ -259,6 +344,14 @@ const handleLogout = async () => {
     }
 };
 
+const handleClearSelection = () => {
+    selectedPlaylistIds.clear();
+    playlistList.querySelectorAll(".playlist-item.selected").forEach(card => {
+        card.classList.remove("selected");
+    });
+    updateSelectionUI();
+};
+
 // 绑定事件
 loginBtn.addEventListener("click", handleLogin);
 spoinderFeatureBtn.addEventListener("click", () => {
@@ -275,6 +368,7 @@ shuffleFeatureBtn.addEventListener("click", () => {
 });
 backToMenuBtn.addEventListener("click", showMenu);
 logoutBtn.addEventListener("click", handleLogout);
+clearSelectionBtn.addEventListener("click", handleClearSelection);
 submitSelectionBtn.addEventListener("click", handleSubmitSelection);
 cancelGenerateBtn.addEventListener("click", closeGenerateModal);
 confirmGenerateBtn.addEventListener("click", handleGenerateConfirm);
