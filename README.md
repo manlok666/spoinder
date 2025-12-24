@@ -2,6 +2,9 @@
 
 **Spoinder** 是一个结合了 Spotify 音乐库与 Tinder 滑动交互体验的 Web 应用程序。它旨在帮助用户以一种有趣、直观的方式重新发现自己歌单中的宝藏歌曲，并提供更彻底的歌单洗牌（Shuffle）功能。
 
+Demo 体验地址: https://spoinder.onrender.com/
+
+
 ## ✨ 功能与特点
 
 ### 核心功能
