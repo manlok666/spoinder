@@ -15,12 +15,22 @@
         <span class="flame">🔥</span>
         <span class="brand-text">Spoinder</span>
       </div>
-      <button id="logoutBtn" class="ghost-btn" aria-label="登出">登出</button>
+      <div style="display: flex; gap: 12px;">
+        <button id="backToMenuBtn" class="ghost-btn hidden">返回</button>
+        <button id="logoutBtn" class="ghost-btn" aria-label="登出">登出</button>
+      </div>
     </header>
 
     <!-- 登录卡片 -->
     <section id="loginCard" class="card">
       <button id="loginBtn" class="primary-btn">start</button>
+    </section>
+
+    <!-- 功能菜单卡片 -->
+    <section id="menuCard" class="card hidden">
+      <h1>功能列表</h1>
+      <button id="spoinderFeatureBtn" class="primary-btn">Spoinder</button>
+      <button id="shuffleFeatureBtn" class="primary-btn">Shuffle</button>
     </section>
 
     <!-- 播放列表卡片 -->
