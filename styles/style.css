@@ -403,6 +403,21 @@ input:focus {
     gap: 24px;
 }
 
+.feature-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.feature-desc {
+    font-size: 14px;
+    margin: 0;
+    text-align: center;
+    opacity: 0.8;
+}
+
 #loginBtn,
 #spoinderFeatureBtn,
 #shuffleFeatureBtn {
