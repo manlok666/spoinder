@@ -1,9 +1,134 @@
 # 🔥 Spoinder
 
+[English](#english) | [中文](#中文)
+
+<a name="english"></a>
+
+**Spoinder** is a web application that combines your Spotify music library with the swipe interaction experience of Tinder. It aims to help users rediscover hidden gems in their playlists in a fun and intuitive way, while also providing a more thorough playlist shuffle function.
+
+**Demo:** https://spoinder.onrender.com/
+
+## ✨ Features
+
+### Core Functions
+1.  **Spoinder Mode (Swipe Discovery)**
+    *   **Tinder-style Interaction**: Randomly draws songs from your selected playlists and filters them via "Swipe Left (Dislike) / Swipe Right (Like)".
+    *   **Smart Generation**: Automatically generates a new Spotify playlist (named `spoinder + date`) containing all "Liked" songs when the target count is reached or no more songs are available.
+    *   **Multi-selection**: Supports extracting a song pool from multiple playlists simultaneously.
+    *   **Undo**: Made a mistake? Supports undoing the last operation.
+
+2.  **Shuffle Mode (True Shuffle)**
+    *   **True Random Algorithm**: Addresses the issue where Spotify's native shuffle isn't "random" enough by using a custom algorithm to thoroughly shuffle playlists.
+    *   **Position Deviation Optimization**: The algorithm ensures songs deviate as much as possible from their original positions (e.g., moving the 2nd song to the 782nd), and minimizes "fixed points" to guarantee freshness after shuffling.
+
+### Design Style
+*   **iOS Glassmorphism**: The UI features a high-blur, semi-transparent frosted glass style, combined with Spotify's classic black and green color scheme for a modern look.
+*   **Smooth Animations**: Includes delicate interactive animations like card fly-outs, fade-ins, loading spinners, and button scaling to reduce visual stutter.
+*   **Responsive Design**: Perfectly adapted for desktop and mobile. Mobile features a dedicated scrolling number picker and touch gesture support.
+
+## 🛠 Tech Stack
+
+Built with a lightweight native Web tech stack:
+
+*   **Backend Runtime**: Node.js (Recommended v14.0.0+)
+*   **Web Framework**: Express.js
+*   **Frontend Core**: Native HTML5, CSS3 (CSS Variables, Flexbox, Grid), Vanilla JavaScript (ES6+)
+*   **API Integration**: Spotify Web API
+*   **Authentication**: OAuth 2.0 (Authorization Code Flow) + Cookies
+*   **Dependencies**:
+    *   `express`: Web server
+    *   `node-fetch`: Server-side HTTP requests
+    *   `dotenv`: Environment variable management
+    *   `cookie-parser`: Cookie parsing
+    *   `querystring`: Query string handling
+
+## 🚀 Configuration & Deployment Guide
+
+### 1. Prerequisites
+*   [Node.js](https://nodejs.org/) and npm installed.
+*   A [Spotify Developer](https://developer.spotify.com/dashboard/) account.
+
+### 2. Register Spotify App
+1.  Log in to the Spotify Developer Dashboard.
+2.  Click "Create App".
+3.  Fill in the App Name (e.g., Spoinder) and Description.
+4.  In app settings, find **Redirect URI** and add your callback address.
+    *   Local development: `http://localhost:3000/callback`
+    *   Production: Fill in your actual domain callback address.
+5.  Save the Client ID and Client Secret.
+
+### 3. Install Dependencies
+Run the following command in the project root directory:
+
+```bash
+npm install
+```
+
+### 4. Environment Variables
+Create a file named `.env` in the project root directory and fill in the following:
+
+```env
+# Server Port
+PORT=3000
+
+# Spotify App Credentials (from Developer Dashboard)
+CLIENT_ID=your_spotify_client_id
+CLIENT_SECRET=your_spotify_client_secret
+
+# Callback URL (Must match the one set in Dashboard)
+REDIRECT_URI=http://localhost:3000/callback
+
+# Environment Mode (development / production)
+NODE_ENV=development
+```
+
+### 5. Start Project
+
+**Start in Development / Production Mode:**
+
+```bash
+node server.js
+```
+
+Upon success, the console will output:
+`Server on http://localhost:3000`
+
+### 6. Usage
+1.  Visit `http://localhost:3000` in your browser.
+2.  Click the **START** button to jump to Spotify for authorization login.
+3.  After logging in, choose a feature:
+    *   **Spoinder**: Select playlists -> Set generation count -> Start swiping -> Automatically create new playlist.
+    *   **Shuffle**: Select playlists -> Submit -> Wait for shuffle to complete.
+
+## 📂 Directory Structure
+
+```
+spoinder/
+├── pages/              # HTML pages
+│   ├── index.html      # Home/Menu/Playlist Selection
+│   ├── swipe.html      # Swipe Interaction Page
+│   └── success.html    # Success Page
+├── styles/             # CSS files
+│   ├── style.css       # Global & Home styles
+│   └── swipe.css       # Swipe page styles
+├── scripts/            # Frontend JavaScript
+│   ├── app.js          # Home logic
+│   └── swipe.js        # Swipe logic
+├── server.js           # Node.js Backend Entry
+├── package.json        # Project dependencies
+├── .env                # Environment variables (Create manually)
+└── README.md           # Documentation
+```
+
+---
+
+<a name="中文"></a>
+
+# 🔥 Spoinder (中文版)
+
 **Spoinder** 是一个结合了 Spotify 音乐库与 Tinder 滑动交互体验的 Web 应用程序。它旨在帮助用户以一种有趣、直观的方式重新发现自己歌单中的宝藏歌曲，并提供更彻底的歌单洗牌（Shuffle）功能。
 
-Demo 体验地址: https://spoinder.onrender.com/
-
+**Demo 体验地址:** https://spoinder.onrender.com/
 
 ## ✨ 功能与特点
 
